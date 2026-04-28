@@ -1,0 +1,1 @@
+fetch('https://generativelanguage.googleapis.com/v1beta/models?key=AIzaSyArYlcJgHEWYvITwGq7K7CTC2UINg6HKF8').then(r=>r.json()).then(d=>require('fs').writeFileSync('c:/food-delivery-App/backend/models.json', JSON.stringify(d, null, 2))).catch(console.error)
