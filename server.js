@@ -315,15 +315,15 @@ app.use("/api/*", (req, res) => {
 
 // Global error handler
 app.use(globalErrorHandler)
-// Serve static files in production
-if (process.env.NODE_ENV === "production") {
-  const path = require("path")
-  app.use(express.static(path.join(__dirname, "../frontend/dist")))
+// Serve static files in production (Commented out because frontend is hosted separately)
+// if (process.env.NODE_ENV === "production") {
+//   const path = require("path")
+//   app.use(express.static(path.join(__dirname, "../frontend/dist")))
 
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"))
-  })
-}
+//   app.get("*", (req, res) => {
+//     res.sendFile(path.join(__dirname, "../frontend/dist/index.html"))
+//   })
+// }
 
 // Graceful shutdown
 const shutdown = async () => {
