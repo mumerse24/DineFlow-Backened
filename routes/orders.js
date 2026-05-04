@@ -9,6 +9,54 @@ const routingService = require("../utils/routingService")
 
 const router = express.Router()
 
+// @route   GET api/orders/availability/:restaurantId
+// @desc    Check table availability for a specific time
+// @access  Private
+router.get("/availability/:restaurantId", auth, async (req, res) => {
+  try {
+    const { restaurantId } = req.params
+    const { dateTime, peopleCount } = req.query
+
+    if (!dateTime || !peopleCount) {
+      return res.status(400).json({ success: false, message: "Date, time and people count are required" })
+    }
+
+    const restaurant = await Restaurant.findById(restaurantId)
+    if (!restaurant) {
+      return res.status(404).json({ success: false, message: "Restaurant not found" })
+    }
+
+    const requestedStart = new Date(dateTime)
+    const duration = restaurant.dineInConfig?.reservationDuration || 90
+    const requestedEnd = new Date(requestedStart.getTime() + duration * 60000)
+
+    // Find overlapping reservations
+    const overlappingReservations = await Order.find({
+      restaurant: restaurantId,
+      orderType: "dine-in",
+      status: { $nin: ["cancelled", "delivered", "completed"] },
+      "reservationDetails.reservationDateTime": {
+        $lt: requestedEnd,
+        $gte: new Date(requestedStart.getTime() - duration * 60000)
+      }
+    })
+
+    const maxTables = restaurant.dineInConfig?.maxTables || 10
+    const availableTables = maxTables - overlappingReservations.length
+
+    res.json({
+      success: true,
+      availableTables,
+      isAvailable: availableTables > 0,
+      maxTables,
+      duration
+    })
+  } catch (error) {
+    console.error("Availability check error:", error)
+    res.status(500).json({ success: false, message: "Server error" })
+  }
+})
+
 // @route   POST /api/orders
 // @desc    Create new order
 // @access  Private
@@ -63,7 +111,7 @@ router.post(
 
       const {
         restaurant: restaurantId,
-        items,
+        items = [],
         deliveryAddress,
         contactInfo,
         paymentInfo,
@@ -72,8 +120,12 @@ router.post(
         tableNumber,
         paymentDetails,
         usePoints = false,
-        pointsToRedeem = 0
+        pointsToRedeem = 0,
+        reservationDateTime,
+        peopleCount,
+        pickupTime
       } = req.body
+
 
       console.log("Order body received for processing:", JSON.stringify(req.body, null, 2))
 
@@ -93,6 +145,14 @@ router.post(
       // Verify and calculate items
       let subtotal = 0
       const orderItems = []
+
+      // ✅ Validation: Items are required for Delivery and Pickup, but optional for Dine-In (Table Reservation)
+      if (orderType !== "dine-in" && (!items || items.length === 0)) {
+        return res.status(400).json({
+          success: false,
+          message: "Cart is empty. Please add items to place an order.",
+        })
+      }
 
       for (const item of items) {
         const menuItem = await MenuItem.findById(item.menuItem)
@@ -180,6 +240,45 @@ router.post(
       const requestedMinutes = req.body.estimatedDeliveryTimeMinutes ? Number(req.body.estimatedDeliveryTimeMinutes) : null
       const deliveryMinutes = requestedMinutes || (orderType === "delivery" ? 45 : 20)
       estimatedDeliveryTime.setMinutes(estimatedDeliveryTime.getMinutes() + deliveryMinutes)
+      
+      // ✅ Custom Validations for Dine-In and Pickup
+      if (orderType === "dine-in") {
+        if (!reservationDateTime || !peopleCount) {
+          return res.status(400).json({
+            success: false,
+            message: "Reservation date, time, and number of people are required for Dine-In orders."
+          })
+        }
+
+        // Check availability again before saving
+        const restaurant = await Restaurant.findById(restaurantId)
+        const requestedStart = new Date(reservationDateTime)
+        const duration = restaurant.dineInConfig?.reservationDuration || 90
+        const requestedEnd = new Date(requestedStart.getTime() + duration * 60000)
+
+        const overlappingCount = await Order.countDocuments({
+          restaurant: restaurantId,
+          orderType: "dine-in",
+          status: { $nin: ["cancelled", "delivered", "completed"] },
+          "reservationDetails.reservationDateTime": { $lt: requestedEnd, $gte: new Date(requestedStart.getTime() - duration * 60000) }
+        })
+
+        if (overlappingCount >= (restaurant.dineInConfig?.maxTables || 10)) {
+          return res.status(400).json({
+            success: false,
+            message: "Sorry, no tables available for the selected time slot. Please choose another time."
+          })
+        }
+      }
+
+      if (orderType === "delivery") {
+        if (!deliveryAddress || !deliveryAddress.street || !deliveryAddress.city) {
+          return res.status(400).json({
+            success: false,
+            message: "Complete delivery address (Street and City) is required for Delivery orders."
+          })
+        }
+      }
 
       // Create order
       const order = new Order({
@@ -215,6 +314,11 @@ router.post(
         },
         orderType,
         tableNumber: tableNumber || "",
+        reservationDetails: orderType === "dine-in" ? {
+          reservationDateTime: new Date(reservationDateTime),
+          peopleCount: Number(peopleCount)
+        } : undefined,
+        pickupTime: orderType === "pickup" && pickupTime ? new Date(pickupTime) : undefined,
         estimatedDeliveryTime,
         specialInstructions: specialInstructions || "",
       })

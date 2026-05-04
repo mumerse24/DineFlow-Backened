@@ -60,6 +60,30 @@ router.post("/login", async (req, res) => {
   }
 })
 
+// @route   GET /api/admin/riders/available
+// @desc    Get all available (idle) riders
+// @access  Private (Admin only)
+router.get("/riders/available", adminAuth, async (req, res) => {
+  try {
+    const riders = await User.find({
+      role: "rider",
+      riderStatus: "available",
+      isActive: true
+    }).select("name email phone riderStatus activeOrderCount currentLocation")
+
+    res.json({
+      success: true,
+      data: riders
+    })
+  } catch (error) {
+    console.error("Get available riders error:", error)
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    })
+  }
+})
+
 // @route   GET /api/admin/dashboard
 // @desc    Get admin dashboard statistics
 // @access  Private (Admin only)
@@ -950,11 +974,11 @@ router.put(
 
       order.assignedDriver = riderId;
       order.assignedAt = new Date();
-      order.status = "out_for_delivery";
+      order.status = "assigned";
 
       // Add to timeline
       order.timeline.push({
-        status: "out_for_delivery",
+        status: "assigned",
         timestamp: new Date(),
         note: `Assigned to rider: ${rider.name}`
       });
@@ -976,12 +1000,10 @@ router.put(
           .populate("assignedDriver", "name phone")
           .lean();
 
-        getIO().emit("orderAssignedToRider", {
-          riderId: rider._id,
-          order: populatedOrder
-        });
-
-        // Also notify admin dashboard of status change
+        // Notify specifically that rider
+        getIO().to(`user_${riderId}`).emit("order:assigned", populatedOrder);
+        
+        // Also notify generally for status update
         getIO().emit("orderStatusUpdated", populatedOrder);
         getIO().emit("riderStatusUpdated", {
           riderId: rider._id,

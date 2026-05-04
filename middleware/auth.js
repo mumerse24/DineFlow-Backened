@@ -114,7 +114,7 @@ const adminAuth = async (req, res, next) => {
   }
 };
 
-// 🍽️ Restaurant Auth
+// 🍽️ Restaurant Auth (Allowing both Restaurant roles and Admin accounts)
 const restaurantAuth = async (req, res, next) => {
   try {
     const token = getTokenFromHeader(req);
@@ -123,13 +123,20 @@ const restaurantAuth = async (req, res, next) => {
     const { decoded, error } = verifyToken(token);
     if (error) return res.status(401).json({ success: false, message: "Invalid token" });
 
-    const user = await User.findById(decoded.id).select("-password");
-
-    if (!user || (user.role !== "restaurant" && user.role !== "admin")) {
-      return res.status(403).json({ success: false, message: "Restaurant privileges required" });
+    // 1️⃣ Check Admin collection first
+    let account = await Admin.findById(decoded.id).select("-password");
+    
+    // 2️⃣ If not found in Admin, check User collection
+    if (!account) {
+      account = await User.findById(decoded.id).select("-password");
+      
+      // 3️⃣ If found in User, verify role
+      if (!account || (account.role !== "restaurant" && account.role !== "admin")) {
+        return res.status(403).json({ success: false, message: "Restaurant privileges required" });
+      }
     }
 
-    req.user = user;
+    req.user = account;
     next();
   } catch (error) {
     console.error("Restaurant Auth Error:", error);

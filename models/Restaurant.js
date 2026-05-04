@@ -110,6 +110,11 @@ const restaurantSchema = new mongoose.Schema(
       enum: ["Delivery", "Pickup", "Dine-in", "Vegetarian", "Vegan", "Halal", "Kosher", "Gluten-free"],
       default: ["Delivery"],
     },
+    dineInConfig: {
+      maxTables: { type: Number, default: 10 },
+      maxPeoplePerTable: { type: Number, default: 4 },
+      reservationDuration: { type: Number, default: 90 }, // in minutes
+    },
     paymentMethods: {
       type: [String],
       enum: ["Cash", "Card", "Digital Wallet", "Online Payment"],

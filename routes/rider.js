@@ -196,6 +196,9 @@ router.put(
             if (status === "delivered") {
                 order.actualDeliveryTime = new Date()
             }
+            if (status === "on_the_way") {
+                order.movement_start_at = new Date()
+            }
 
             const statusLabels = {
                 accepted: "Order accepted by rider",

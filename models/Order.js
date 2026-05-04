@@ -82,12 +82,18 @@ const orderSchema = new mongoose.Schema(
       cardLast4: String,
       cardName: String
     },
+    reservationDetails: {
+      reservationDateTime: Date,
+      peopleCount: Number,
+    },
+    pickupTime: Date,
     tableNumber: String,
     status: {
       type: String,
       enum: [
         "pending",
         "confirmed",
+        "assigned",
         "preparing",
         "ready",
         "accepted",
@@ -112,6 +118,7 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
     actualDeliveryTime: Date,
+    movement_start_at: Date,
     specialInstructions: String,
     cancellationReason: String,
     rating: {

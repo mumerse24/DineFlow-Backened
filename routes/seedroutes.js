@@ -44,8 +44,8 @@ router.post("/restaurant", async (req, res) => {
                 state: "Sindh",
                 zipCode: "75500",
                 coordinates: {
-                    lat: 24.8607,
-                    lng: 67.0011
+                    lat: 32.5742,
+                    lng: 74.0754
                 }
             },
 
@@ -298,7 +298,7 @@ router.post("/menu-items", async (req, res) => {
                     city: "Karachi",
                     state: "Sindh",
                     zipCode: "75500",
-                    coordinates: { lat: 24.8607, lng: 67.0011 }
+                    coordinates: { lat: 32.5742, lng: 74.0754 }
                 },
                 businessInfo: {
                     taxId: "TAX-SEED-001",

@@ -469,12 +469,11 @@ router.post("/forgot-password", async (req, res) => {
           `,
         })
       }
-      
-      res.json({ success: true, message: "Reset link sent successfully (check console if email not configured)" })
+      res.json({ success: true, message: "Reset link sent successfully (check console if email not configured)", resetUrl })
     } catch (err) {
       console.error("Email send error:", err)
       // We still return success because it's logged in console for dev
-      res.json({ success: true, message: "Reset link generated (Logged to console, email failed)" })
+      res.json({ success: true, message: "Reset link generated (Logged to console, email failed)", resetUrl })
     }
   } catch (error) {
     console.error("Forgot password error:", error)

@@ -2,6 +2,7 @@ const socketIo = require("socket.io")
 const routingService = require("./routingService")
 
 let io
+const riderLocations = new Map(); // Store last known position per orderId
 
 const initSocket = (server) => {
     const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -23,6 +24,11 @@ const initSocket = (server) => {
         socket.on("joinOrderChat", (orderId) => {
             socket.join(`chat_${orderId}`);
             console.log(`💬 User ${socket.id} joined chat room: chat_${orderId}`);
+        });
+
+        socket.on("joinUser", (userId) => {
+            socket.join(`user_${userId}`);
+            console.log(`👤 User ${socket.id} joined personal room: user_${userId}`);
         });
 
         socket.on("sendMessage", async (data) => {
@@ -48,7 +54,43 @@ const initSocket = (server) => {
             }
         });
 
+        // 📍 LIVE TRACKING LOGIC
+        socket.on("riderJoinOrder", (orderId) => {
+            socket.join(`track_${orderId}`);
+            socket.orderId = orderId; // Attach for disconnect cleanup
+            console.log(`🛵 Rider ${socket.id} joined tracking room: track_${orderId}`);
+        });
+
+        socket.on("customerJoinOrder", (orderId) => {
+            socket.join(`track_${orderId}`);
+            console.log(`🏠 Customer ${socket.id} joined tracking room: track_${orderId}`);
+            
+            // Send last known position immediately if exists
+            if (riderLocations.has(orderId)) {
+                socket.emit("riderLocationUpdate", riderLocations.get(orderId));
+            }
+        });
+
+        socket.on("updateRiderLocation", (data) => {
+            const { orderId, lat, lng, bearing, speed, timestamp } = data;
+            
+            // 1. Update In-Memory Cache
+            const locationUpdate = { lat, lng, bearing, speed, timestamp, orderId };
+            riderLocations.set(orderId, locationUpdate);
+
+            // 2. Broadcast to all in the tracking room (including the customer)
+            io.to(`track_${orderId}`).emit("riderLocationUpdate", locationUpdate);
+            console.log(`📍 Location update for order ${orderId}`);
+        });
+
         socket.on("disconnect", () => {
+            if (socket.orderId) {
+                // Notify customer that rider went offline
+                io.to(`track_${socket.orderId}`).emit("riderOffline", { 
+                    orderId: socket.orderId,
+                    lastSeen: new Date()
+                });
+            }
             console.log(`🔌 Client disconnected: ${socket.id}`)
         })
     })
