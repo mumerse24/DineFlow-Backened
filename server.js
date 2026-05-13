@@ -357,12 +357,13 @@ const socketUtils = require("./utils/socket")
 
 const PORT = process.env.PORT || 5000
 const server = app.listen(PORT, "0.0.0.0", () => {
+  const baseUrl = process.env.API_URL || `http://localhost:${PORT}`
   console.log(`🚀 Server running on port ${PORT}`)
   console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`)
-  console.log(`📡 API URL: http://localhost:${PORT}/api`)
-  console.log(`🔧 Admin API: http://localhost:${PORT}/api/admin`)
-  console.log(`🩺 Health check: http://localhost:${PORT}/api/health`)
-  console.log(`🌱 Seed routes: http://localhost:${PORT}/api/seed`)
+  console.log(`📡 API URL: ${baseUrl}/api`)
+  console.log(`🔧 Admin API: ${baseUrl}/api/admin`)
+  console.log(`🩺 Health check: ${baseUrl}/api/health`)
+  console.log(`🌱 Seed routes: ${baseUrl}/api/seed`)
   console.log(`🔗 MongoDB: ${mongoose.connection.readyState === 1 ? "Connected" : "Disconnected"}`)
 })
 
