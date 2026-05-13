@@ -472,19 +472,15 @@ router.get("/rider", async (req, res) => {
             rider.role = "rider"
             rider.riderStatus = "available"
             if (req.body.password) {
-                const salt = await bcrypt.genSalt(10)
-                rider.password = await bcrypt.hash(req.body.password, salt)
+                rider.password = req.body.password // User model pre-save hook will hash it
             }
             await rider.save()
             console.log("✅ Rider updated:", email)
         } else {
-            const salt = await bcrypt.genSalt(10)
-            const hashedPassword = await bcrypt.hash(password, salt)
-            
             rider = new User({
                 name,
                 email,
-                password: hashedPassword,
+                password: password, // User model pre-save hook will hash it
                 phone: "03111111111",
                 role: "rider",
                 riderStatus: "available",
