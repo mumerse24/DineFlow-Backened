@@ -3,6 +3,7 @@ const GroupOrder = require("../models/GroupOrder")
 const MenuItem = require("../models/MenuItem")
 const { auth } = require("../middleware/auth")
 const crypto = require("crypto")
+const { getIO } = require("../utils/socket")
 
 const router = express.Router()
 
@@ -79,6 +80,13 @@ router.post("/:inviteCode/join", auth, async (req, res) => {
         items: []
       })
       await groupOrder.save()
+      
+      // Broadcast update
+      const io = getIO()
+      const populatedOrder = await GroupOrder.findById(groupOrder._id)
+        .populate("restaurant", "name image")
+        .populate("members.items.menuItem", "name price images")
+      io.to(`group_${req.params.inviteCode}`).emit("groupOrderUpdated", populatedOrder)
     }
 
     res.json({ success: true, data: groupOrder })
@@ -114,7 +122,15 @@ router.post("/:inviteCode/add-item", auth, async (req, res) => {
     })
 
     await groupOrder.save()
-    res.json({ success: true, data: groupOrder })
+    
+    // Broadcast update
+    const io = getIO()
+    const populatedOrder = await GroupOrder.findById(groupOrder._id)
+      .populate("restaurant", "name image")
+      .populate("members.items.menuItem", "name price images")
+    io.to(`group_${req.params.inviteCode}`).emit("groupOrderUpdated", populatedOrder)
+
+    res.json({ success: true, data: populatedOrder })
   } catch (error) {
     res.status(500).json({ success: false, message: "Server error" })
   }

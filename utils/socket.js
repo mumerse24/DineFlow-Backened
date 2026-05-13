@@ -26,6 +26,12 @@ const initSocket = (server) => {
             console.log(`💬 User ${socket.id} joined chat room: chat_${orderId}`);
         });
 
+        // 👥 GROUP ORDER LOGIC
+        socket.on("joinGroupOrder", (inviteCode) => {
+            socket.join(`group_${inviteCode}`);
+            console.log(`👥 User ${socket.id} joined group order room: group_${inviteCode}`);
+        });
+
         socket.on("joinUser", (userId) => {
             socket.join(`user_${userId}`);
             console.log(`👤 User ${socket.id} joined personal room: user_${userId}`);
