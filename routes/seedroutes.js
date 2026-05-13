@@ -8,7 +8,7 @@ const router = express.Router()
 // @route   POST /api/seed/restaurant
 // @desc    Create test restaurant with menu items
 // @access  Public (for testing)
-router.post("/restaurant", async (req, res) => {
+router.get("/restaurant", async (req, res) => {
     try {
         console.log("Seeding restaurant and menu items...")
 
@@ -184,7 +184,7 @@ router.post("/restaurant", async (req, res) => {
 // @route   POST /api/seed/simple
 // @desc    Create simple test restaurant
 // @access  Public
-router.post("/simple", async (req, res) => {
+router.get("/simple", async (req, res) => {
     try {
         console.log("Creating simple restaurant...")
 
@@ -279,7 +279,7 @@ router.post("/simple", async (req, res) => {
 // @route   POST /api/seed/menu-items
 // @desc    Seed menu items with example data (Zinger Burger, Chicken Pizza, etc.)
 // @access  Public (development use)
-router.post("/menu-items", async (req, res) => {
+router.get("/menu-items", async (req, res) => {
     try {
         console.log("🌱 Seeding menu items...")
 
@@ -459,7 +459,7 @@ router.post("/menu-items", async (req, res) => {
 // @route   POST /api/seed/rider
 // @desc    Create or update a test rider account
 // @access  Public
-router.post("/rider", async (req, res) => {
+router.get("/rider", async (req, res) => {
     try {
         const User = require("../models/User")
         const bcrypt = require("bcryptjs")
