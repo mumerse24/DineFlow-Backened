@@ -91,7 +91,7 @@ const apiLimiter = rateLimit({
 // CORS configuration from .env
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
-  : ["http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "http://10.198.254.113:3000", "http://192.168.1.100:3000", "https://funny-dolphin-2fd424.netlify.app", "https://grand-jalebi-8a7d3c.netlify.app", "https://lively-hummingbird-514686.netlify.app", "http://51.21.191.53"]
+  : ["http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "http://10.198.254.113:3000", "http://192.168.1.100:3000", "https://funny-dolphin-2fd424.netlify.app", "https://grand-jalebi-8a7d3c.netlify.app", "https://lively-hummingbird-514686.netlify.app", "http://51.21.191.53", "https://dineflow-frontened.vercel.app"]
 
 const corsOptions = {
   origin: (origin, callback) => {
