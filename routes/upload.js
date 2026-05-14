@@ -34,7 +34,9 @@ router.post("/", restaurantAuth, (req, res) => {
         if (err instanceof multer.MulterError) {
             return res.status(400).json({ success: false, message: "Upload error: " + err.message });
         } else if (err) {
-            return res.status(400).json({ success: false, message: err.message });
+            console.error("Cloudinary upload error:", err);
+            const errMsg = err.message || err.toString() || "Unknown upload error";
+            return res.status(400).json({ success: false, message: errMsg });
         }
 
         if (!req.file) {
